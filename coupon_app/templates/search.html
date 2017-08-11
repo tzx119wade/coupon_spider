@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta content="yes" name="apple-mobile-web-app-capable">
+  <meta content="yes" name="apple-touch-fullscreen">
+  <meta content="telephone=no,email=no" name="format-detection">
+  <meta name="apple-mobile-web-app-title" content="糖爸爱省钱">
+  <link rel="apple-touch-icon-precomposed" href="{% static 'img/icon-144.png' %}">
+  <link href="{% static 'img/icon-144.png' %}" rel="shortcut icon" type="image/x-icon">
+	<link rel="stylesheet" href="{% static 'css/search.css' %}">
+	<script src="http://g.tbcdn.cn/mtb/lib-flexible/0.3.4/??flexible_css.js,flexible.js"></script>
+	<script src="{% static 'js/reqwest.js' %}"></script>
+  	<script src="{% static 'js/js.cookie.js' %}"></script>
+  	<script src="{% static 'js/jquery.js' %}"></script>
+  	<script src="{% static 'js/vue1.js' %}"></script>
+	<title>搜券助手</title>
+</head>
+{% verbatim %}
+<body id="app">
+	<div class="header_box">
+		<header class="detail-top">
+			<h2>搜券小助手</h2>
+			<a href="http://192.168.3.128:8000">
+				<i class="icon_back_icons"></i>
+				返回
+			</a>
+		</header>
+	</div>
+
+	<div class="result_contain_page">
+		<div class="result" id="result">
+			<div class="result-box">
+				<div class="search-box">
+					<form class="search_info" v-on:submit.prevent="click_search_button()" action="#">
+						<i class="search_icon"></i>
+						<input type="search" placeholder="输入你想要找到宝贝" v-model="search_keyword" id="search-input">
+					</form>
+					<div class="go-search" v-on:click="click_search_button()">找券</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="tickets">
+			<div class="tickets-top">
+				<span class="fl">大家都在找</span>
+			</div>
+			<ul class="tickets-list">
+      <template v-for="item in recommend_keyword">
+				<li v-on:click.prevent="recommend_button_click(item.name)">
+					<a href="">{{ item.name }}</a>
+				</li>
+      </template>
+			</ul>
+		</div>
+	</div>
+
+	<div class="item-container">
+		<ul class="result-list">
+		<template v-for="item in items">
+			<li>
+				<a v-bind:href="item.url">
+					<img src="http://192.168.3.128:8000/static/img/default_img.png" class="result-img" v-bind:id="item.numiid" v-bind:data-src="item.img">
+					<div class="result-info">
+						<p class="result-title">{{ item.title }}</p>
+						<div class="result-tm">
+							<i class="icon-tm-tao" v-if="item.usertype == 0"></i>
+							<i class="icon-tm-mao" v-if="item.usertype == 1"></i>
+							<span class="result-tm-info">包邮</span>
+						</div>
+						<p class="result-price">
+							¥
+							<span class="price-value">{{ item.price }}</span>
+							<span class="price-other">券后价
+							</span>
+						</p>
+						<div class="result-bottom">
+							<span class="ticket-price">领{{ item.quota }}元券</span>
+							<span class="ticket-count">{{ item.volume }}人领取</span>
+						</div>
+					</div>
+				</a>
+			</li>
+		</template>
+		</ul>
+		<div class="no-more-tip" v-if="request_api_wrong">
+					{{ msg }}
+		</div>
+
+		<div class="spinner" v-if="call_api_right_now">
+        	<div class="rect1"></div>
+        	<div class="rect2"></div>
+        	<div class="rect3"></div>
+        	<div class="rect4"></div>
+    	</div>
+	</div>
+
+	
+	<script>
+
+	  	// others 
+  		String.prototype.format = function () {
+    		var i = 0, args = arguments;
+    		return this.replace(/{}/g, function () {
+      		return typeof args[i] != 'undefined' ? args[i++] : '';
+        	});
+  		};
+
+  
+
+  		var app = new Vue({
+  			el:'#app',
+  			data:{
+  				next_page_num:0,
+  				items:[],
+  				search_keyword:'',
+  				load_imgs:[],
+  				aleady_load_imgs:[],
+  				call_api_right_now:false,
+  				request_api_wrong:false,
+  				msg:'',
+          recommend_keyword:[
+                      {name:'短袖'},
+                      {name:'衣架'},
+                      {name:'手机壳'},
+                      {name:'榨汁机'},
+                      {name:'USB电风扇'},
+                      {name:'防晒乳'},
+                      {name:'牙膏'},
+                      {name:'婴儿床'},
+                      {name:'腮红'},
+                      {name:'背心'},
+                      {name:'太阳镜'},
+                ],
+  			},
+  			methods:{
+  				// 请求API接口
+  				get_search_data:function(){
+  					var api_url = 'http://192.168.3.128:8000/api/search/{}/{}/'.format(this.search_keyword, this.next_page_num);
+  					var self = this;
+
+  					reqwest({
+  						url:api_url,
+  						method:'get',
+  						type:'json',
+  						headers :{'X-CSRFToken': Cookies.get('csrftoken')},
+  						success:function(resp){
+  							self.call_api_right_now = false;
+  							self.next_page_num++;
+  							for (var i = 0;i < resp.length; i++){
+  								// 判断价格是不是多位浮点数
+  								if (resp[i].price % 1 != 0){
+  									// 说明是浮点数
+  									resp[i].price = resp[i].price.toFixed(1)
+  								}
+  								self.items.push(resp[i]);
+  								self.load_imgs.push(resp[i].numiid);
+  							}
+
+  							self.$nextTick(function(){
+              					this.check_img_show();
+            				});
+  						},
+  						error:function(error){
+  							self.call_api_right_now = false;
+  							self.request_api_wrong = true;
+  							if (self.items.length > 0){
+  								self.msg = '😳没有更多了';
+  							}else {
+  								self.msg = '😢啥也没找到';
+  							}
+  						}
+  					})
+
+  				},
+
+  				click_search_button:function(){
+  					var input = document.getElementById("search-input");
+					input.blur();
+
+  					if (this.search_keyword.length > 0 && this.call_api_right_now == false ){
+  						this.call_api_right_now = true;
+  						// 清空上一次的请求数据和状态
+  						this.items = [];
+  						this.load_imgs = [];
+  						this.next_page_num = 0;
+  						this.aleady_load_imgs = [];
+  						this.request_api_wrong = false;
+  						this.get_search_data();
+  					}
+  				},
+
+  				check_img_show:function(){
+  					for (var i = 0; i < this.load_imgs.length; i++){
+          				// 首先判断是不是加载过了
+          				if (this.aleady_load_imgs.indexOf(this.load_imgs[i]) == -1){
+            				var id = '#{}'.format(this.load_imgs[i]);
+            				var offset = $(id).offset();
+            				var top_offset = offset.top;
+            				var screenHeight = window.innerHeight;
+            				var scrollTop = document.body.scrollTop;
+
+            				var offset_height = top_offset - scrollTop;
+
+            				// 如果在可视区域内
+            				if (offset_height < screenHeight){
+              					$(id).attr('src',$(id).attr('data-src'));
+              					this.aleady_load_imgs.push(this.load_imgs[i]);
+           					 }
+          				}
+          			}
+  				},
+
+  				scroll_callback:function(){
+  					// 获取位置变量
+        			var screenHeight = window.innerHeight;
+        			var bodyHeight = document.body.scrollHeight;
+        			var scrollTop = document.body.scrollTop;
+        			var leve = bodyHeight *0.8; 
+
+        			if (screenHeight + scrollTop >= leve && this.request_api_wrong != true){
+          				if (this.call_api_right_now == false){
+            				this.call_api_right_now = true;
+            				this.get_search_data();
+          				}
+        			}
+        			this.check_img_show();
+  				},
+
+  				add_scroll_event:function(){
+  					window.addEventListener('scroll',this.scroll_callback);
+  				},
+
+          recommend_button_click : function(name){
+            // 清空当前的请求数据
+            this.items = [];
+            this.load_imgs = [];
+            this.next_page_num = 0;
+            this.aleady_load_imgs = [];
+            this.request_api_wrong = false;
+            // 赋值search_keyword
+            this.search_keyword = name;
+            this.get_search_data();
+          },
+  			},
+
+  			ready : function(){
+  				this.add_scroll_event();
+  			}
+  		});
+
+	</script>
+	
+</body>
+{% endverbatim %}
+</html>

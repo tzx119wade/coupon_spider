@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta content="yes" name="apple-mobile-web-app-capable">
+  <meta content="yes" name="apple-touch-fullscreen">
+  <meta content="telephone=no,email=no" name="format-detection">
+  <meta name="application-name" content="糖爸爱省钱">
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-title" content="糖爸爱省钱">
+  <link rel="apple-touch-icon-precomposed" href="{% static 'img/icon-144.png' %}">
+  <link href="{% static 'img/icon-144.png' %}" rel="shortcut icon" type="image/x-icon">
+  <link rel="stylesheet" href="{% static 'css/index.css' %}">
+  <link rel="stylesheet" href="{% static 'css/animate.css' %}">
+  <script src="http://g.tbcdn.cn/mtb/lib-flexible/0.3.4/??flexible_css.js,flexible.js"></script>
+  <script src="{% static 'js/reqwest.js' %}"></script>
+  <script src="{% static 'js/js.cookie.js' %}"></script>
+  <script src="{% static 'js/jquery.js' %}"></script>
+  <script src="{% static 'js/vue1.js' %}"></script>
+
+  <title>糖爸爱省钱</title>
+</head>
+{% verbatim %}
+<body id="app">
+  <div class="item-section">
+    <div class="item-header" id="header">
+      <div class="content">糖爸爱省钱</div>
+      <span v-on:click="location_to_info_page()">如何领券？</span>
+      <a class="search-icon" href="http://192.168.3.128:8000/search"></a>
+    </div>
+    <ul>
+      <template v-for="item in items">
+      <li class="flag">
+        <a class="figure flag-item" v-on:click="receive_coupon(item)">
+          <img src="http://192.168.3.128:8000/static/img/default_img.png" class="flag-img" v-bind:data-src="item.img" v-bind:id="item.id">
+        </a>
+        <div class="figcaption flag-item">
+          <div class="flag-title">
+            <a>{{ item.name }}</a>
+          </div>
+          <div class="flag-price">
+            <span>{{ item.coupon_price }}</span>
+            <strong>¥{{ item.cut_price }}</strong>
+            <small>(券后价)</small>
+          </div>
+          <div class="flag-type">
+            已有{{ item.num_receive }}人领取
+          </div>
+          <a class="flag-btn-none-clicked" v-on:click="receive_coupon(item)">马上领券</a>
+        </div>
+      </li>
+      </template>
+    </ul>
+    <!-- loading -->
+    <div class="spinner-container">
+      <div class="spinner" v-if="call_api_right_now">
+        <div class="rect1"></div>
+        <div class="rect2"></div>
+        <div class="rect3"></div>
+        <div class="rect4"></div>
+      </div>
+      <div id="no-more-tip" v-if="page_num == total_page_num">没有更多了...</div>
+    </div>
+  </div>
+  
+
+  <script>
+  // 公用 方法
+  String.prototype.format = function () {
+    var i = 0, args = arguments;
+    return this.replace(/{}/g, function () {
+      return typeof args[i] != 'undefined' ? args[i++] : '';
+        });
+  };
+
+  var app = new Vue({
+
+    el:'#app',
+
+    data:{
+      page_num: 0,
+      total_page_num:undefined,
+      items: [],
+      aleady_load_imgs: [],
+      load_imgs: [],
+      call_api_right_now: false,
+    },
+
+    methods:{
+
+      // 首页接口
+      load_page_data:function(){
+        var api_url = 'http://192.168.3.128:8000/api/get_coupon/{}/'.format(this.page_num+1);
+        var self = this;
+        reqwest({
+          url:api_url,
+          method:'get',
+          type:'json',
+          headers :{'X-CSRFToken': Cookies.get('csrftoken')},
+          success:function(resp){
+            // 恢复请求状态
+            self.call_api_right_now = false;
+            // 页码+1
+            self.page_num ++;
+            self.total_page_num = resp.total_page_num;
+
+            // 绑定数据
+            for (var i=0 ; i < resp.data.length; i++){
+              self.load_imgs.push(resp.data[i].id);
+              self.items.push(resp.data[i]);
+            }
+
+            self.$nextTick(function(){
+              console.log('Dom 渲染完成')
+              this.check_image_show();
+            });
+          },
+          error:function(error){
+            self.call_api_right_now = false;
+            console.log('load page data wrong');
+            console.log(error);
+          }
+        })
+      },
+
+      // 监听滚动的回调
+      scroll_callback : function(){
+
+        // 获取位置变量
+        var screenHeight = window.innerHeight;
+        var bodyHeight = document.body.scrollHeight;
+        var scrollTop = document.body.scrollTop;
+        var leve = bodyHeight *0.9; 
+
+        // 到达指定位置
+        if (screenHeight + scrollTop >= leve){
+          if (this.call_api_right_now == false && this.page_num != this.total_page_num){
+            this.call_api_right_now = true;
+            this.load_page_data();
+          }
+        }
+        // 在滚动事件里随时验证图片
+        this.check_image_show();
+      },
+
+      // 添加滚动事件监听
+      add_scroll_event:function(){
+        window.addEventListener('scroll',this.scroll_callback);
+      },
+
+      // 懒加载-验证图片是否需要显示
+      check_image_show:function(){
+
+        for (var i = 0; i < this.load_imgs.length; i++){
+          // 首先判断是不是加载过了
+          if (this.aleady_load_imgs.indexOf(this.load_imgs[i]) == -1){
+            var id = '#{}'.format(this.load_imgs[i]);
+            var offset = $(id).offset();
+            var top_offset = offset.top;
+            var screenHeight = window.innerHeight;
+            var scrollTop = document.body.scrollTop;
+
+            var offset_height = top_offset - scrollTop;
+
+            // 判断是不是在可视区域内
+            if (offset_height < screenHeight){
+              $(id).attr('src',$(id).attr('data-src'));
+              this.aleady_load_imgs.push(this.load_imgs[i]);
+            }
+          }
+
+          }
+      },
+
+      receive_coupon: function(item){
+        var coupon_url = item.coupon_url;
+        console.log(coupon_url);
+        window.location.href = coupon_url;
+      },
+
+      location_to_info_page : function(){
+        window.location.href = 'http://192.168.3.128:8000/info/';
+      },
+    },
+
+    ready:function(){
+      this.add_scroll_event();
+      this.load_page_data()
+    }
+
+  });
+
+  </script>
+</body>
+{% endverbatim %}
+</html>
