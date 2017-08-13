@@ -27,13 +27,13 @@
     <div class="item-header" id="header">
       <div class="content">糖爸爱省钱</div>
       <span v-on:click="location_to_info_page()">如何领券？</span>
-      <a class="search-icon" href="http://192.168.3.128:8000/search"></a>
+      <a class="search-icon" href="http://192.168.0.104:8000/search"></a>
     </div>
     <ul>
       <template v-for="item in items">
       <li class="flag">
         <a class="figure flag-item" v-on:click="receive_coupon(item)">
-          <img src="http://192.168.3.128:8000/static/img/default_img.png" class="flag-img" v-bind:data-src="item.img" v-bind:id="item.id">
+          <img src="http://192.168.0.104:8000/static/img/default_img.png" class="flag-img" v-bind:data-src="item.img" v-bind:id="item.id">
         </a>
         <div class="figcaption flag-item">
           <div class="flag-title">
@@ -91,7 +91,7 @@
 
       // 首页接口
       load_page_data:function(){
-        var api_url = 'http://192.168.3.128:8000/api/get_coupon/{}/'.format(this.page_num+1);
+        var api_url = 'http://192.168.0.104:8000/api/get_coupon/{}/'.format(this.page_num+1);
         var self = this;
         reqwest({
           url:api_url,
@@ -180,7 +180,7 @@
       },
 
       location_to_info_page : function(){
-        window.location.href = 'http://192.168.3.128:8000/info/';
+        window.location.href = 'http://192.168.0.104:8000/info/';
       },
     },
 

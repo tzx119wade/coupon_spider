@@ -25,8 +25,14 @@ urlpatterns = [
 # 定时任务
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
-def my_job():
-	print ('== 定时任务运行中 {}=='.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+from .coupon_spider import CouponSpider
+
+
+def coupon_spider_job():
+    spider = CouponSpider()
+    spider.start_spider()
+    print ('== 爬取完成 {}=='.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(my_job, 'interval', seconds=20)
+scheduler.add_job(coupon_spider_job, 'interval', minutes=5)
+scheduler.start()

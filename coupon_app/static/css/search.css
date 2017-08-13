@@ -58,7 +58,7 @@ html {
 }
 
 .icon_back_icons {
-	background: url(http://192.168.3.128:8000/static/img/back.png);
+	background: url(http://192.168.0.104:8000/static/img/back.png);
 	background-repeat: no-repeat;
 	width:0.53333rem;
 	height:0.53333rem;
@@ -108,7 +108,7 @@ html {
 }
 
 .search_icon {
-	background: url(http://192.168.3.128:8000/static/img/search.png);
+	background: url(http://192.168.0.104:8000/static/img/search.png);
 	background-size: cover;
 	background-repeat: no-repeat;
 	display: inline-block;
@@ -258,7 +258,7 @@ input {
 }
 
 .result-tm .icon-tm-tao {
-	background: url(http://192.168.3.128:8000/static/img/淘.png);
+	background: url(http://192.168.0.104:8000/static/img/淘.png);
 	background-repeat: no-repeat;
 	background-size: cover;
 	display: inline-block;
@@ -271,7 +271,7 @@ input {
 }
 
 .result-tm .icon-tm-mao {
-	background: url(http://192.168.3.128:8000/static/img/天猫.png);
+	background: url(http://192.168.0.104:8000/static/img/天猫.png);
 	background-repeat: no-repeat;
 	background-size: cover;
 	display: inline-block;

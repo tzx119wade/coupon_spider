@@ -30,7 +30,7 @@ html,body {
 }
 
 .item-header .search-icon {
-	background: url(http://192.168.3.128:8000/static/img/search-icon-white.png);
+	background: url(http://192.168.0.104:8000/static/img/search-icon-white.png);
 	background-size: cover;
 	width: 0.5333333rem;
 	height: 0.5333333rem;
@@ -433,7 +433,7 @@ html,body {
 .btn-close {
 	z-index: 2;
 	cursor: pointer;
-	background: url(http://192.168.3.128:8000/static/img/cancel.png);
+	background: url(http://192.168.0.104:8000/static/img/cancel.png);
 	width:0.58666667rem;
 	height: 0.58666667rem;
 	background-size: cover;
