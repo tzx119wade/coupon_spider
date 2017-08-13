@@ -111,7 +111,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # allowed host
-ALLOWED_HOSTS = ['192.168.0.104','127.0.0.1','.heydaily.info']
+ALLOWED_HOSTS = ['192.168.0.104','127.0.0.1','www.heydaily.info']
 
 # mongonengine 
 from mongoengine import connect
